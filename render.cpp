@@ -1,10 +1,15 @@
 #include <Bela.h>
 #include <Midi.h>
 
+#define NUM_CHANNELS 2
+// #define BUFFER_SIZE 2646000 // 60 seconds
+#define BUFFER_SIZE 44100 // 1 seconds
+
 Midi midi;
 unsigned int midiPort = 0;
-
 bool recording = false;
+
+float gBuffer[NUM_CHANNELS][BUFFER_SIZE] = {{0}, {0}};
 
 void midiMessageCallback(MidiChannelMessage message, void* port) {
     if(message.getType() == kmmControlChange) {
