@@ -18,6 +18,8 @@ bool gRecording = false;
 float gBuffer[NUM_LAYERS][BUFFER_SIZE] = {{0}};
 float gLayerMuls[NUM_LAYERS];
 uint32_t gBufferIdx = 0;
+uint16_t gInputChannel = 0;
+
 
 void deleteLayer(uint16_t layerNum) {
     std::fill(gBuffer[layerNum], gBuffer[layerNum] + BUFFER_SIZE, 0);
@@ -99,21 +101,30 @@ bool setup(BelaContext *context, void *userData)
 void render(BelaContext *context, void *userData)
 {
     for (uint32_t n = 0; n < context->audioFrames; n++) {
+        float inputSignal = audioRead(context, n, gInputChannel);
         // record into current layer
         if (gRecording) {
-            // gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
-            float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
-            gBuffer[gCurrentLayer][gBufferIdx] += noise;
+            gBuffer[gCurrentLayer][gBufferIdx] += inputSignal;
+            // float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
+            // gBuffer[gCurrentLayer][gBufferIdx] += noise;
         }
 
-        // sum all layers and write to both audio channels
-        float sig = 0;
+        // sum all layers
+        float layerSignal = 0;
         for (uint16_t layer = 0; layer < NUM_LAYERS; layer++) {
-            sig += gBuffer[layer][gBufferIdx] * gLayerMuls[layer];
+            layerSignal += gBuffer[layer][gBufferIdx] * gLayerMuls[layer];
         }
+
+        // combine input pass through and recorded layers
+        float outputSignal = (inputSignal * gLayerMuls[gCurrentLayer]) +
+                             layerSignal;
+
+        // output
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
-            audioWrite(context, n, ch, sig);
+            audioWrite(context, n, ch, outputSignal);
         }
+
+        // move buffer playhead
         gBufferIdx = (gBufferIdx + 1) % BUFFER_SIZE;
     }
 }
