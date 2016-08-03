@@ -46,7 +46,7 @@ void render(BelaContext *context, void *userData)
             if (gRecording) {
                 // gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
                 float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
-                gBuffer[ch][gBufferIdx] = noise;
+                gBuffer[ch][gBufferIdx] += noise;
             }
 
             audioWrite(context, n, ch, gBuffer[ch][gBufferIdx]);
