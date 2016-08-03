@@ -16,12 +16,17 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
 
 bool setup(BelaContext *context, void *userData)
 {
+    if (context->audioInChannels != context ->audioOutChannels) {
+        printf("Error: for this project we need matching number of audio I/O");
+        return false;
+    }
+
     midi.readFrom(midiPort);
     midi.writeTo(midiPort);
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, &midiPort);
 
-	return true;
+    return true;
 }
 
 void render(BelaContext *context, void *userData)
