@@ -6,15 +6,15 @@
 #define BUFFER_SIZE 44100 // 1 seconds
 
 Midi midi;
-unsigned int midiPort = 0;
-bool recording = false;
+unsigned int gMidiPort = 0;
+bool gRecording = false;
 
 float gBuffer[NUM_CHANNELS][BUFFER_SIZE] = {{0}, {0}};
 
 void midiMessageCallback(MidiChannelMessage message, void* port) {
     if(message.getType() == kmmControlChange) {
         if (message.getDataByte(0) == 64) {
-            recording = message.getDataByte(1) == 127;
+            gRecording = message.getDataByte(1) == 127;
         }
     }
 }
@@ -28,10 +28,10 @@ bool setup(BelaContext *context, void *userData)
     }
 
     // midi setup
-    midi.readFrom(midiPort);
-    midi.writeTo(midiPort);
+    midi.readFrom(gMidiPort);
+    midi.writeTo(gMidiPort);
     midi.enableParser(true);
-    midi.setParserCallback(midiMessageCallback, &midiPort);
+    midi.setParserCallback(midiMessageCallback, &gMidiPort);
 
     return true;
 }
