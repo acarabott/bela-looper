@@ -1,4 +1,5 @@
 #include <Bela.h>
+#include <stdlib.h>
 #include <Midi.h>
 
 #define NUM_CHANNELS 2
@@ -42,7 +43,9 @@ void render(BelaContext *context, void *userData)
     for (uint32_t n = 0; n < context->audioFrames; n++) {
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
             if (gRecording) {
-                gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
+                // gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
+                float noise = 0.1 * (rand() / (float)RAND_MAX * 2 - 1);
+                gBuffer[ch][gRecordIdx] = noise;
             }
         }
         if (gRecording) {
