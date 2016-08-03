@@ -39,11 +39,13 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-    if (gRecording) {
-        for (uint32_t n = 0; n < context->audioFrames; n++) {
-            for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
+    for (uint32_t n = 0; n < context->audioFrames; n++) {
+        for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
+            if (gRecording) {
                 gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
             }
+        }
+        if (gRecording) {
             gRecordIdx = (gRecordIdx + 1) % BUFFER_SIZE;
         }
     }
