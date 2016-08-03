@@ -7,8 +7,9 @@
 
 Midi midi;
 unsigned int gMidiPort = 0;
-bool gRecording = false;
 
+bool gRecording = false;
+uint32_t gRecordIdx = 0;
 float gBuffer[NUM_CHANNELS][BUFFER_SIZE] = {{0}, {0}};
 
 void midiMessageCallback(MidiChannelMessage message, void* port) {
@@ -38,7 +39,14 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-
+    if (gRecording) {
+        for (uint32_t n = 0; n < context->audioFrames; n++) {
+            for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
+                gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
+            }
+            gRecordIdx = (gRecordIdx + 1) % BUFFER_SIZE;
+        }
+    }
 }
 
 void cleanup(BelaContext *context, void *userData)
