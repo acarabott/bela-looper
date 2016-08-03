@@ -4,14 +4,15 @@
 
 #define NUM_CHANNELS 2
 // #define BUFFER_SIZE 2646000 // 60 seconds
-#define BUFFER_SIZE 44100 // 1 seconds
+// #define BUFFER_SIZE 441000 // 1 seconds
+#define BUFFER_SIZE 132300 // 3 seconds
 
 Midi midi;
 unsigned int gMidiPort = 0;
 
 bool gRecording = false;
-uint32_t gRecordIdx = 0;
 float gBuffer[NUM_CHANNELS][BUFFER_SIZE] = {{0}, {0}};
+uint32_t gBufferIdx = 0;
 
 void midiMessageCallback(MidiChannelMessage message, void* port) {
     if(message.getType() == kmmControlChange) {
@@ -44,13 +45,13 @@ void render(BelaContext *context, void *userData)
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
             if (gRecording) {
                 // gBuffer[ch][gRecordIdx] = audioRead(context, n, ch);
-                float noise = 0.1 * (rand() / (float)RAND_MAX * 2 - 1);
-                gBuffer[ch][gRecordIdx] = noise;
+                float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
+                gBuffer[ch][gBufferIdx] = noise;
             }
+
+            audioWrite(context, n, ch, gBuffer[ch][gBufferIdx]);
         }
-        if (gRecording) {
-            gRecordIdx = (gRecordIdx + 1) % BUFFER_SIZE;
-        }
+        gBufferIdx = (gBufferIdx + 1) % BUFFER_SIZE;
     }
 }
 
