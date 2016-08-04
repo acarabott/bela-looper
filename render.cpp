@@ -84,7 +84,7 @@ bool setup(BelaContext *context, void *userData)
 void render(BelaContext *context, void *userData)
 {
     for (uint32_t n = 0; n < context->audioFrames; n++) {
-        float inputSignal = audioRead(context, n, gInputChannel);
+        const float inputSignal = audioRead(context, n, gInputChannel);
 
         float layerSignal = 0;
         // record into layers
@@ -98,15 +98,19 @@ void render(BelaContext *context, void *userData)
         }
 
         // combine input pass through and recorded layers
-        float outputSignal = (inputSignal * layers[gCurrentLayer].getMul()) +
-                             layerSignal;
+        float outputSignal = layerSignal;
+        // if we are recording we will already have the input signal
+        // so don't add it again!
+        if (!layers[gCurrentLayer].recordEnabled()) {
+            outputSignal += (inputSignal * layers[gCurrentLayer].getMul());
+        }
 
         // output
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
             audioWrite(context, n, ch, outputSignal);
         }
 
-        // move buffer playhead
+        // increment buffer playhead
         gBufferIdx = (gBufferIdx + 1) % BUFFER_SIZE;
     }
 }
