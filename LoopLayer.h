@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define BUFFER_SIZE 441000 // 10 seconds
+#define BUFFER_SIZE 1323000 // 30 seconds
 
 class LoopLayer
 {
