@@ -1,11 +1,15 @@
+#define DEBUG
+
 #include <Bela.h>
 #include <stdlib.h>
 #include <Midi.h>
 #include <Utilities.h>
+#ifdef DEBUG
+    #define __STDC_FORMAT_MACROS
+    #include <inttypes.h>
+#endif
 
 #include "LoopLayer.h"
-
-#define DEBUG
 
 #define NUM_LAYERS 10
 #define NUM_CHANNELS 2
