@@ -86,18 +86,40 @@ void oscMessageCallback(oscpkt::Message message)
 {
     rt_printf("received message to: %s\n", message.addressPattern().c_str());
 
+    // Tempo messages
     int32_t tempoInt;
     float tempoFloat;
     float prevTempo = tempo;
-    if (message.match("/tempo").popInt32(tempoInt).isOk()) {
+    if (message.match("/tempo").popInt32(tempoInt).isOkNoMoreArgs()) {
         tempo = max(tempoInt, 1);
     }
-    else if (message.match("/tempo").popFloat(tempoFloat).isOk()) {
+    else if (message.match("/tempo").popFloat(tempoFloat).isOkNoMoreArgs()) {
         tempo = max(tempoFloat, 1);
     }
 
     if (tempo != prevTempo) {
         rt_printf("tempo changed to %f\n", tempo);
+    }
+
+    // recording messages
+
+    int32_t recordLayer;
+    int32_t recordEnable;
+    int32_t recordQuant = 0;
+
+    oscpkt::Message::ArgReader recordReader = message.match("/record");
+    if (recordReader.popInt32(recordLayer).popInt32(recordEnable).isOk()) {
+        #ifdef DEBUG
+            std::string mode = recordEnable != 0 ? "START" : "STOP";
+            rt_printf("channel %d recording %s", recordLayer, mode.c_str());
+        #endif
+
+        recordReader.popInt32(recordQuant);
+
+        #ifdef DEBUG
+            std::string quant = recordQuant != 0 ? "Quantise" : "Free";
+            rt_printf(" - %s\n", quant.c_str());
+        #endif
     }
 
 }
