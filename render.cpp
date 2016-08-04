@@ -22,7 +22,7 @@ unsigned int gMidiPort = 0;
 
 LoopLayer layers[NUM_LAYERS];
 uint16_t gCurrentLayer = 0;
-uint32_t gBufferIdx = 0;
+uint64_t currentFrame = 0;
 uint16_t gInputChannel = 0;
 
 OSCServer oscServer;
@@ -40,7 +40,7 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
             #ifdef DEBUG
                 printf("recording on layer %d\n", gCurrentLayer);
             #endif
-            layers[gCurrentLayer].toggleRecording();
+            layers[gCurrentLayer].toggleRecording(currentFrame);
         }
         // volume
         else if (controlChange == 7) {
@@ -118,18 +118,16 @@ void oscMessageCallback(oscpkt::Message message)
         // schedule / enable recording
         LoopLayer& layer = layers[recordLayer];
         if (recordEnable) {
-            rt_printf("yep\n");
             if (recordQuantise) {
                 layer.scheduleRecordingStart();
             } else {
-                layer.startRecording();
+                layer.startRecording(currentFrame);
             }
         } else {
-            rt_printf("nope\n");
             if (recordQuantise) {
                 layer.scheduleRecordingStop();
             } else {
-                layer.stopRecording();
+                layer.stopRecording(currentFrame);
             }
         }
     }
@@ -170,17 +168,18 @@ void render(BelaContext *context, void *userData)
 
     // audio loop
     for (uint32_t n = 0; n < context->audioFrames; n++) {
-        bool beat = checkBeat(context->audioFramesElapsed + n,
-                              context->audioSampleRate);
+        currentFrame = context->audioFramesElapsed + n;
+        bool beat = checkBeat(currentFrame, context->audioSampleRate);
+
         if (beat) {
             for (uint16_t l = 0; l < NUM_LAYERS; l++) {
                 LoopLayer& layer = layers[l];
 
                 if (layer.recordingStartScheduled()) {
-                    layer.startRecording();
+                    layer.startRecording(currentFrame);
                 }
                 else if (layer.recordingStopScheduled()) {
-                    layer.stopRecording();
+                    layer.stopRecording(currentFrame);
                 }
             }
             beatCount++;
@@ -190,22 +189,19 @@ void render(BelaContext *context, void *userData)
 
         float layerSignal = 0;
         // record into layers
-        for (uint16_t layer = 0; layer < NUM_LAYERS; layer++) {
-            if (layers[layer].recordEnabled()) {
-                layers[layer].write(gBufferIdx, inputSignal);
+        for (uint16_t l = 0; l < NUM_LAYERS; l++) {
+            LoopLayer& layer = layers[l];
+            if (layer.recordEnabled()) {
+                layer.write(currentFrame, inputSignal);
             }
 
             // sum all layers
-            layerSignal += layers[layer].read(gBufferIdx);
+            layerSignal += layer.read(currentFrame);
         }
 
         // combine input pass through and recorded layers
         float outputSignal = layerSignal;
-        // if we are recording we will already have the input signal
-        // so don't add it again!
-        if (!layers[gCurrentLayer].recordEnabled()) {
-            outputSignal += (inputSignal * layers[gCurrentLayer].getMul());
-        }
+        outputSignal += (inputSignal * layers[gCurrentLayer].getMul());
 
         // output
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
@@ -216,9 +212,6 @@ void render(BelaContext *context, void *userData)
                 audioWrite(context, n, ch, noise);
             }
         }
-
-        // increment buffer playhead
-        gBufferIdx = (gBufferIdx + 1) % BUFFER_SIZE;
     }
 }
 
