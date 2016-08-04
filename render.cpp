@@ -96,24 +96,43 @@ void oscMessageCallback(oscpkt::Message message)
     // recording messages
 
     int32_t recordLayer;
-    int32_t recordEnable;
-    int32_t recordQuant = 0;
+    int32_t recordEnableArg;
+    int32_t recordQuantiseArg = 0;
 
     oscpkt::Message::ArgReader recordReader = message.match("/record");
-    if (recordReader.popInt32(recordLayer).popInt32(recordEnable).isOk()) {
+    if (recordReader.popInt32(recordLayer).popInt32(recordEnableArg).isOk()) {
+        bool recordEnable = recordEnableArg != 0;
         #ifdef DEBUG
-            std::string mode = recordEnable != 0 ? "START" : "STOP";
+            std::string mode = recordEnable ? "START" : "STOP";
             rt_printf("channel %d recording %s", recordLayer, mode.c_str());
         #endif
 
-        recordReader.popInt32(recordQuant);
+        recordReader.popInt32(recordQuantiseArg);
+        bool recordQuantise = recordQuantiseArg != 0;
 
         #ifdef DEBUG
-            std::string quant = recordQuant != 0 ? "Quantise" : "Free";
-            rt_printf(" - %s\n", quant.c_str());
+            std::string quantise = recordQuantise != 0 ? "Quantise" : "Free";
+            rt_printf(" - %s\n", quantise.c_str());
         #endif
-    }
 
+        // schedule / enable recording
+        LoopLayer& layer = layers[recordLayer];
+        if (recordEnable) {
+            rt_printf("yep\n");
+            if (recordQuantise) {
+                layer.scheduleRecordingStart();
+            } else {
+                layer.startRecording();
+            }
+        } else {
+            rt_printf("nope\n");
+            if (recordQuantise) {
+                layer.scheduleRecordingStop();
+            } else {
+                layer.stopRecording();
+            }
+        }
+    }
 }
 
 bool setup(BelaContext *context, void *userData)
@@ -151,6 +170,22 @@ void render(BelaContext *context, void *userData)
 
     // audio loop
     for (uint32_t n = 0; n < context->audioFrames; n++) {
+        bool beat = checkBeat(context->audioFramesElapsed + n,
+                              context->audioSampleRate);
+        if (beat) {
+            for (uint16_t l = 0; l < NUM_LAYERS; l++) {
+                LoopLayer& layer = layers[l];
+
+                if (layer.recordingStartScheduled()) {
+                    layer.startRecording();
+                }
+                else if (layer.recordingStopScheduled()) {
+                    layer.stopRecording();
+                }
+            }
+            beatCount++;
+        }
+
         const float inputSignal = audioRead(context, n, gInputChannel);
 
         float layerSignal = 0;
@@ -170,11 +205,6 @@ void render(BelaContext *context, void *userData)
         // so don't add it again!
         if (!layers[gCurrentLayer].recordEnabled()) {
             outputSignal += (inputSignal * layers[gCurrentLayer].getMul());
-        }
-
-        bool beat = checkBeat(context->audioFramesElapsed + n, context->audioSampleRate);
-        if (beat) {
-            beatCount++;
         }
 
         // output
