@@ -22,6 +22,9 @@ uint16_t gCurrentLayer = 0;
 uint32_t gBufferIdx = 0;
 uint16_t gInputChannel = 0;
 
+float tempo = 60;
+uint32_t beatCount = 0;
+
 void midiMessageCallback(MidiChannelMessage message, void* port) {
     if (message.getType() == kmmControlChange) {
         midi_byte_t controlChange = message.getDataByte(0);
@@ -87,6 +90,12 @@ bool setup(BelaContext *context, void *userData)
     return true;
 }
 
+bool checkBeat(uint64_t audioFramesElapsed, float audioSampleRate)
+{
+    const uint64_t beatFrame = (60.0 / tempo) * audioSampleRate;
+    return audioFramesElapsed % beatFrame == 0;
+}
+
 void render(BelaContext *context, void *userData)
 {
     for (uint32_t n = 0; n < context->audioFrames; n++) {
@@ -111,9 +120,19 @@ void render(BelaContext *context, void *userData)
             outputSignal += (inputSignal * layers[gCurrentLayer].getMul());
         }
 
+        bool beat = checkBeat(context->audioFramesElapsed + n, context->audioSampleRate);
+        if (beat) {
+            beatCount++;
+        }
+
         // output
         for (uint32_t ch = 0; ch < context->audioOutChannels; ch++) {
             audioWrite(context, n, ch, outputSignal);
+
+            if(beat) {
+                float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
+                audioWrite(context, n, ch, noise);
+            }
         }
 
         // increment buffer playhead
