@@ -53,7 +53,6 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
             #endif
             layers[gCurrentLayer].erase();
         }
-
     }
     else if (message.getType() == kmmNoteOn) {
         midi_byte_t noteNum = message.getDataByte(0);
@@ -66,11 +65,16 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
                 printf("current layer set to %d\n", gCurrentLayer);
             #endif
         }
-    } else {
-        #ifdef DEBUG
-            message.prettyPrint();
-        #endif
+
+        // tempo control
+        if (noteNum >= 60 && noteNum <= 72) {
+            tempo = map(noteNum, 60, 72, 60, 120);
+        }
     }
+
+    #ifdef DEBUG
+        message.prettyPrint();
+    #endif
 }
 
 bool setup(BelaContext *context, void *userData)
