@@ -38,24 +38,16 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
         // sustain pedal
         if (controlChange == 64) {
             #ifdef DEBUG
-                printf("current layer now %d\n", gCurrentLayer);
+                printf("recording on layer %d\n", gCurrentLayer);
             #endif
             layers[gCurrentLayer].toggleRecording();
         }
         // volume
         else if (controlChange == 7) {
             layers[gCurrentLayer].setMul(map(value, 0, 127, 0, 1));
-
-            #ifdef DEBUG
-                printf("layer %d volume: %f\n", gCurrentLayer,
-                    layers[gCurrentLayer].getMul());
-            #endif
         }
         // modulation
         else if (controlChange == 1 && value == 127) {
-            #ifdef DEBUG
-                printf("deleting layer %d\n", gCurrentLayer);
-            #endif
             layers[gCurrentLayer].erase();
         }
     }
