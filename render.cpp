@@ -17,9 +17,8 @@
 Midi midi;
 unsigned int gMidiPort = 0;
 
-uint16_t gCurrentLayer = 0;
-
 LoopLayer layers[NUM_LAYERS];
+uint16_t gCurrentLayer = 0;
 uint32_t gBufferIdx = 0;
 uint16_t gInputChannel = 0;
 
@@ -30,6 +29,9 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
 
         // sustain pedal
         if (controlChange == 64) {
+            #ifdef DEBUG
+                printf("current layer now %d\n", gCurrentLayer);
+            #endif
             layers[gCurrentLayer].toggleRecording();
         }
         // volume
