@@ -8,9 +8,15 @@
 class LoopLayer
 {
 protected:
+  uint16_t id;
   float buffer[BUFFER_SIZE];
   bool recording;
   float mul;
+  bool startRecordingScheduled;
+  bool stopRecordingScheduled;
+
+private:
+  static uint16_t idGenerator;
 
 public:
   LoopLayer();
@@ -20,6 +26,10 @@ public:
   void stopRecording();
   void toggleRecording();
   bool recordEnabled();
+  void scheduleRecordingStart();
+  void scheduleRecordingStop();
+  bool recordingStartScheduled();
+  bool recordingStopScheduled();
   float read(uint32_t index);
   void write(uint32_t index, float sample);
   float getMul();
