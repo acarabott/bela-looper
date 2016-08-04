@@ -3,11 +3,14 @@
 #include <Bela.h>
 #include <stdlib.h>
 #include <Midi.h>
+#include <OSCServer.h>
+#include <OSCClient.h>
 #include <Utilities.h>
 #ifdef DEBUG
     #define __STDC_FORMAT_MACROS
     #include <inttypes.h>
 #endif
+
 
 #include "LoopLayer.h"
 
@@ -21,6 +24,8 @@ LoopLayer layers[NUM_LAYERS];
 uint16_t gCurrentLayer = 0;
 uint32_t gBufferIdx = 0;
 uint16_t gInputChannel = 0;
+
+OSCServer oscServer;
 
 float tempo = 60;
 uint32_t beatCount = 0;
@@ -77,6 +82,26 @@ void midiMessageCallback(MidiChannelMessage message, void* port) {
     #endif
 }
 
+void oscMessageCallback(oscpkt::Message message)
+{
+    rt_printf("received message to: %s\n", message.addressPattern().c_str());
+
+    int32_t tempoInt;
+    float tempoFloat;
+    float prevTempo = tempo;
+    if (message.match("/tempo").popInt32(tempoInt).isOk()) {
+        tempo = max(tempoInt, 1);
+    }
+    else if (message.match("/tempo").popFloat(tempoFloat).isOk()) {
+        tempo = max(tempoFloat, 1);
+    }
+
+    if (tempo != prevTempo) {
+        rt_printf("tempo changed to %f\n", tempo);
+    }
+
+}
+
 bool setup(BelaContext *context, void *userData)
 {
     // ensure audio channels
@@ -91,6 +116,9 @@ bool setup(BelaContext *context, void *userData)
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, &gMidiPort);
 
+    // OSC setup
+    oscServer.setup(6666);
+
     return true;
 }
 
@@ -102,6 +130,12 @@ bool checkBeat(uint64_t audioFramesElapsed, float audioSampleRate)
 
 void render(BelaContext *context, void *userData)
 {
+    // listen for OSC
+    while (oscServer.messageWaiting()) {
+        oscMessageCallback(oscServer.popMessage());
+    }
+
+    // audio loop
     for (uint32_t n = 0; n < context->audioFrames; n++) {
         const float inputSignal = audioRead(context, n, gInputChannel);
 
