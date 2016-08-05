@@ -2,11 +2,10 @@
 ~bela.sendMsg("/tempo", 80);
 
 
-
 (
 ~numChannels = 10;
 if(w.notNil) {w.close};
-w = Window("record", Rect(100, 100, 500, 300)).front;
+w = Window("record", Rect(100, 100, 500, 350)).front;
 w.view.addFlowLayout;
 
 ~recordButtons = ~numChannels.collect {|i|
@@ -38,10 +37,24 @@ w.view.decorator.nextLine;
 w.view.decorator.nextLine;
 
 ~sliders = ~numChannels.collect {|i|
-  EZSlider(w, Rect(i * 50, 0, 40, 200), label:"M%".format(i + 1), layout: \vert)
+  EZSlider(w, Rect(i * 50, 0, 40, 200), label:"V%".format(i + 1), layout: \vert)
     .value_(1)
     .action_({|ez|
       ~bela.sendMsg("/volume", i, ez.value);
+    });
+};
+
+w.view.decorator.nextLine;
+
+~muteButtons = ~numChannels.collect {|i|
+  var label = "M %".format(i + 1);
+  Button(w, Rect(i * 50,0,40,40))
+    .states_([
+      [label, Color.white, Color.blue(1.0, 0.2)],
+      [label, Color.white, Color.blue(1.0, 0.8)]
+    ])
+    .action_({|butt|
+      ~bela.sendMsg("/volume", i, (1 - butt.value).abs);
     });
 };
 
