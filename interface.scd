@@ -4,15 +4,17 @@
 
 
 (
+~numChannels = 10;
 if(w.notNil) {w.close};
 w = Window("record", Rect(100, 100, 500, 300)).front;
 w.view.addFlowLayout;
 
-~recordButtons = 10.collect {|i|
+~recordButtons = ~numChannels.collect {|i|
+  var label = "R %".format(i + 1);
   Button(w, Rect(i * 50,0,40,40))
     .states_([
-      ["R %".format(i + 1), Color.black, Color.white],
-      ["R %".format(i + 1), Color.white, Color.black]
+      [label, Color.black, Color.white],
+      [label, Color.white, Color.black]
     ])
     .action_({|butt|
       var record = [false, true][butt.value].postln;
@@ -23,13 +25,23 @@ w.view.addFlowLayout;
 
 w.view.decorator.nextLine;
 
-~eraseButtons = 10.collect {|i|
+~eraseButtons = ~numChannels.collect {|i|
   Button(w, Rect(i * 50,0,40,40))
     .states_([
       ["E %".format(i + 1), Color.white, Color.red],
     ])
     .action_({|butt|
       ~bela.sendMsg("/erase", i);
+    });
+};
+
+w.view.decorator.nextLine;
+
+~sliders = ~numChannels.collect {|i|
+  EZSlider(w, Rect(i * 50, 0, 40, 200), label:"M%".format(i + 1), layout: \vert)
+    .value_(1)
+    .action_({|ez|
+      ~bela.sendMsg("/volume", i, ez.value);
     });
 };
 

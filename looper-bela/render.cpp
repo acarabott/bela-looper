@@ -143,6 +143,17 @@ void oscMessageCallback(oscpkt::Message message)
         layers[eraseLayer].erase();
     }
 
+    // volume messages
+    int32_t volumeLayer;
+    float volume;
+
+    if (message.match("/volume")
+            .popInt32(volumeLayer)
+            .popFloat(volume)
+            .isOkNoMoreArgs()) {
+        layers[volumeLayer].setMul(volume);
+    }
+
 }
 
 bool setup(BelaContext *context, void *userData)
