@@ -28,7 +28,12 @@ LoopLayer::LoopLayer()
 void LoopLayer::input(uint64_t clockFrame, float signal)
 {
   if (recording) {
-    // write(frame, signal);
+    uint64_t relativeStartFrame = recorded ? recordingStoppedFrame :
+                                             recordingStartedFrame;
+    uint64_t relativeClockFrame = clockFrame - relativeStartFrame;
+    uint32_t bufferFrame = relativeClockFrame % numLoopFrames();
+
+    write(bufferFrame, signal);
   }
 }
 
@@ -110,9 +115,19 @@ float LoopLayer::read(uint64_t clockFrame)
   return 0;
 }
 
-void LoopLayer::write()
+void LoopLayer::write(uint32_t bufferFrame, float signal)
 {
+  float signalLimited = constrain(signal, -1.0, 1.0);
+  // record the signal
+  buffer[bufferFrame] += signalLimited;
+  // limit the summed signal
+  buffer[bufferFrame] = constrain(buffer[bufferFrame], -1.0, 1.0);
 
+  #ifdef DEBUG
+    if (bufferFrame % 4410 == 0) {
+      rt_printf("writing on layer %d at frame %d\n", id, bufferFrame);
+    }
+  #endif
 }
 
 float LoopLayer::getMul()

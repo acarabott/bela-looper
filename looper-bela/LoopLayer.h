@@ -9,8 +9,7 @@ public:
   LoopLayer();
   ~LoopLayer();
 
-  // static const uint32_t numBufferFrames = 1323000; // 30 seconds
-  static const uint32_t numBufferFrames = 132300; // 30 seconds
+  static const uint32_t numBufferFrames = 1323000; // 30 seconds
   void input(uint64_t clockFrame, float signal);
   void startRecording(uint64_t clockFrame);
   void stopRecording(uint64_t clockFrame);
@@ -20,7 +19,7 @@ public:
   bool recordingStartScheduled();
   bool recordingStopScheduled();
   float read(uint64_t clockFrame);
-  void write();
+  void write(uint32_t bufferFrame, float signal);
   float getMul();
   void setMul(float _mul);
   void erase();
