@@ -25,15 +25,18 @@ LoopLayer::LoopLayer()
   loopEnd = numBufferFrames;
 }
 
+uint64_t LoopLayer::getBufferIndex(uint64_t clockFrame)
+{
+  uint64_t relativeStartFrame = recorded ? recordingStoppedFrame :
+                                             recordingStartedFrame;
+  uint64_t relativeClockFrame = clockFrame - relativeStartFrame;
+  return min(relativeClockFrame % numLoopFrames(), numBufferFrames);
+}
+
 void LoopLayer::input(uint64_t clockFrame, float signal)
 {
   if (recording) {
-    uint64_t relativeStartFrame = recorded ? recordingStoppedFrame :
-                                             recordingStartedFrame;
-    uint64_t relativeClockFrame = clockFrame - relativeStartFrame;
-    uint32_t bufferFrame = relativeClockFrame % numLoopFrames();
-
-    write(bufferFrame, signal);
+    write(getBufferIndex(clockFrame), signal);
   }
 }
 
@@ -110,9 +113,14 @@ bool LoopLayer::recordingStopScheduled()
   return stopRecordingScheduled;
 }
 
+bool LoopLayer:: isRecording()
+{
+  return recording;
+}
+
 float LoopLayer::read(uint64_t clockFrame)
 {
-  return 0;
+  return buffer[getBufferIndex(clockFrame)] * mul;
 }
 
 void LoopLayer::write(uint32_t bufferFrame, float signal)
@@ -156,7 +164,9 @@ void LoopLayer::erase()
 
 uint32_t LoopLayer::numLoopFrames()
 {
-  return min(recordingStoppedFrame - recordingStartedFrame, numBufferFrames);
+  return recorded ? min(recordingStoppedFrame - recordingStartedFrame,
+                        numBufferFrames)
+                  : numBufferFrames;
 }
 
 LoopLayer::~LoopLayer() {

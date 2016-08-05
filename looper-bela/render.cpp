@@ -209,8 +209,11 @@ void render(BelaContext *context, void *userData)
             LoopLayer& layer = layers[l];
             // send input signal
             layer.input(currentFrame, inputSignal);
-            // sum all layers
-            layerSignal += layer.read(currentFrame);
+            // sum all layers, except those that are recording, as they will
+            // be giving us the input signal, which we already have
+            if (!layer.isRecording()) {
+                layerSignal += layer.read(currentFrame);
+            }
         }
 
         // combine input pass through and recorded layers

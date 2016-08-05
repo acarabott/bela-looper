@@ -18,6 +18,7 @@ public:
   void scheduleRecordingStop();
   bool recordingStartScheduled();
   bool recordingStopScheduled();
+  bool isRecording();
   float read(uint64_t clockFrame);
   void write(uint32_t bufferFrame, float signal);
   float getMul();
@@ -38,6 +39,7 @@ protected:
 
   uint32_t loopEnd;
   uint32_t numLoopFrames();
+  uint64_t getBufferIndex(uint64_t clockFrame);
 
 private:
   static uint16_t idGenerator;
