@@ -131,6 +131,18 @@ void oscMessageCallback(oscpkt::Message message)
             }
         }
     }
+
+    // erase messages
+
+    int32_t eraseLayer;
+    if (message.match("/erase").popInt32(eraseLayer).isOkNoMoreArgs()) {
+        #ifdef DEBUG
+            rt_printf("erasing channel %d\n", eraseLayer);
+        #endif
+
+        layers[eraseLayer].erase();
+    }
+
 }
 
 bool setup(BelaContext *context, void *userData)
