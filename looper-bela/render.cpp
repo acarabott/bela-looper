@@ -208,8 +208,7 @@ void render(BelaContext *context, void *userData)
             audioWrite(context, n, ch, outputSignal);
 
             if(beat) {
-                float noise = 0.01 * (rand() / (float)RAND_MAX * 2 - 1);
-                audioWrite(context, n, ch, noise);
+                audioWrite(context, n, ch, 1);
             }
         }
     }
