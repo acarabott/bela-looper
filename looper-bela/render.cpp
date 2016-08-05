@@ -153,6 +153,10 @@ bool setup(BelaContext *context, void *userData)
         return false;
     }
 
+    printf("max loop duration: %f\n", LoopLayer::numBufferFrames /
+                                      context->audioSampleRate);
+
+
     // midi setup
     midi.readFrom(gMidiPort);
     midi.writeTo(gMidiPort);
