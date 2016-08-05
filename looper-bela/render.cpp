@@ -169,10 +169,10 @@ bool setup(BelaContext *context, void *userData)
     return true;
 }
 
-bool checkBeat(uint64_t audioFramesElapsed, float audioSampleRate)
+bool checkBeat(uint64_t currentFrame, float audioSampleRate)
 {
     const uint64_t beatFrame = (60.0 / tempo) * audioSampleRate;
-    return audioFramesElapsed % beatFrame == 0;
+    return currentFrame % beatFrame == 0;
 }
 
 void render(BelaContext *context, void *userData)
@@ -207,10 +207,8 @@ void render(BelaContext *context, void *userData)
         // record into layers
         for (uint16_t l = 0; l < NUM_LAYERS; l++) {
             LoopLayer& layer = layers[l];
-            if (layer.recordEnabled()) {
-                layer.write(currentFrame, inputSignal);
-            }
-
+            // send input signal
+            layer.input(currentFrame, inputSignal);
             // sum all layers
             layerSignal += layer.read(currentFrame);
         }
