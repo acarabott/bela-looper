@@ -54,7 +54,7 @@ w.view.decorator.nextLine;
       [label, Color.white, Color.blue(1.0, 0.8)]
     ])
     .action_({|butt|
-      ~bela.sendMsg("/volume", i, (1 - butt.value).abs);
+      ~bela.sendMsg("/volume", i, (1 - butt.value).abs.asFloat);
     });
 };
 
